@@ -1,11 +1,30 @@
 ---
-#Please change the relative directories according to your file locations. 
 - name: Assignment-2
   
   hosts: webservers
   become: true
   
   tasks
+    
+  - name: starting nginx   
+    service:
+              name: nginx 
+              state: started 
+    become: yes
+
+
+  - name: Installing the packages
+    become: true
+    apt:
+      name: php7.4-fpm
+      state: latest   
+
+  
+  - name: Packages Installation
+    become: true
+    apt:
+      name: php7.4-fpm
+      state: latest   
       
       
   - name: Copy file with permission
@@ -28,16 +47,19 @@
       update_cache: yes
       cache_valid_time: 7200
    
-   
-#Installing more and more
-     
+       
+  - name: Installing PHP the packages
+    become: true
+    apt:
+      name: php
+      state: latest   
+      
+  - name: Installing PHP7.4 httpd  
+    apt:
+     name: php7.4-fpm
+     state: absent    
     
-    
-  - name: starting nginx   
-    service:
-              name: nginx 
-              state: started 
-    become: yes
+
 
   - name: Installing back Nginx
     become: true
@@ -45,32 +67,9 @@
       name: nginx
       state: latest
       
-  
-  - name: Installing the packages
-    become: true
-    apt:
-      name: php7.4-fpm
-      state: latest   
-  
-  - name: Installing PHP the packages
-    become: true
-    apt:
-      name: php
-      state: latest   
-      
-  - name: Installing PHP7.4 httpd  (state=present is optional)
-    apt:
-     name: php7.4-fpm
-     state: absent    
-  
-  - name: Installing the packages
-    become: true
-    apt:
-      name: php7.4-fpm
-      state: latest   
 
 
-  - name: inserting default file int the sites-available
+  - name: inserting default file 
     template:
        src: "./default"
        dest: "/etc/nginx/sites-available/default1"
@@ -82,13 +81,11 @@
        state: link
 
 
-     
   - name: restart nginx
     service:
        name: nginx
        state: restarted
     become: yes        
-  
 
      
 - hosts: all
@@ -108,6 +105,26 @@
     haproxy_http_timeout: 15s
     haproxy_balance: leastconn
     haproxy_frontend_port: 80
+
+handlers:
+
+  - name: run Haproxy
+    service:
+      name: haproxy
+      state: started
+
+      
+- hosts: webservers
+  gather_facts: y
+  
+  tasks:
+  
+  - name: restart nginx
+    service:
+       name: nginx
+       state: restarted
+    become: yes
+
 
   tasks:
   
@@ -138,35 +155,13 @@
 
   - name: Deploy HAProxy configuration
     template:
-      src: ./haproxy.cfg.j2
+      src: ./haproxyfile.cfg.j2
       dest: "/etc/haproxy/haproxy.cfg"
     notify:
       - restart Haproxy
       - run Haproxy
 
-  handlers:
-
-  - name: run Haproxy
-    service:
-      name: haproxy
-      state: started
-
-  - name: restart Haproxy
-    service:
-      name: haproxy
-      state: restarted
-      
-- hosts: webservers
-  gather_facts: y
   
-  tasks:
-  
-  - name: restart nginx
-    service:
-       name: nginx
-       state: restarted
-    become: yes
-
 
 
 
