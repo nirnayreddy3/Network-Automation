@@ -41,13 +41,6 @@
      dest: /etc/nginx/nginx.conf
      
 
-- name: Create a directory 
-    become: yes
-    file:
-     path: /home/A1/site
-     state: directory
-     mode: '0755'
-
  - name: Cache updation
     become: yes
     apt:
@@ -61,16 +54,12 @@
       name: php
       state: latest   
       
-  - name: Installing PHP7.4 httpd  
-    apt:
-     name: php7.4-fpm
-     state: absent     
-
 
   - name: inserting default file 
     template:
        src: "./default"
        dest: "/etc/nginx/sites-available/default1"
+
 
   - name: linking default to sites-enabled
     file:
@@ -91,7 +80,7 @@
   
 - hosts: haproxy
   become: true
-  remote_user: A1
+
 
   vars:
     haproxy_maxconns: 4096
@@ -115,6 +104,7 @@ handlers:
 - hosts: webservers
   gather_facts: y
   
+
   tasks:
   
   - name: restart nginx
@@ -124,8 +114,6 @@ handlers:
     become: yes
 
 
-  tasks:
-  
   - name: Update apt cache
     become: yes
     apt:
