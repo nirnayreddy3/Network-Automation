@@ -1,86 +1,121 @@
 ---
-- name: Assignment-2
+#Please change the relative directories according to your file locations. 
+- name: Assignment2
   
   hosts: webservers
   become: true
   
-  tasks
+  tasks:
 
-
-  - name: Installing back Nginx
-    become: true
-    apt:
-      name: nginx
-      state: latest
-    
-  - name: starting nginx   
-    service:
-              name: nginx 
-              state: started 
-    become: yes
-
-
-  - name: Installing the packages
-    become: true
-    apt:
-      name: php7.4-fpm
-      state: latest   
-
-  
-  - name: Packages Installation
-    become: true
-    apt:
-      name: php7.4-fpm
-      state: latest   
-      
-      
-  - name: Copy file with permission
-    become: yes
-    copy: 
-     src: ./nginx.conf
-     dest: /etc/nginx/nginx.conf
-     
-
- - name: Cache updation
+  - name: Updation of Cache
     become: yes
     apt:
       update_cache: yes
       cache_valid_time: 7200
-   
-       
-  - name: Installing PHP the packages
+      
+  - name: UnInstall nginx 
+    apt:
+     name: nginx
+     state: absent   
+    
+  - name: Installing the packages from Nginx
+    become: true
+    apt:
+      name: nginx
+      state: latest   
+      
+  - name: Creating a directory
+    become: yes
+    file:
+     path: /home/A1/site
+     state: directory
+     mode: '0755'
+     
+  - name: Deleting file
+    file:
+     path: /etc/nginx/nginx.conf
+     state: absent
+     
+  - name: Copying file
+    become: yes
+    copy: 
+     src: ./nginx.conf
+     dest: /etc/nginx/nginx.conf
+ 
+      
+  - name: Nginx initiation    
+    service:
+              name: nginx 
+              state: started 
+    become: yes
+  
+  - name: Uninstall PHP 
+    apt:
+     name: php
+     state: absent   
+  
+  - name: Install PHP 
     become: true
     apt:
       name: php
       state: latest   
       
+  - name: Installing PHP7.4 
+    apt:
+     name: php7.4-fpm
+     state: absent    
+  
+  - name: Package installation 
+    become: true
+    apt:
+      name: php7.4-fpm
+      state: latest   
+###
 
-  - name: inserting default file 
+  - name: Ansible deletion 
+    file:
+     path: /var/www/html/index.php
+     state: absent
+
+  - name: Copying file
+    become: yes
+    copy: 
+     src: ./index.php
+     dest: /var/www/html/index.php
+     #Installing all the packages
+
+
+  - name: Removing files
+    file:
+       path: "/etc/nginx/sites-enabled/default"
+       state: absent
+
+
+  - name: Insert file  
     template:
        src: "./default"
        dest: "/etc/nginx/sites-available/default1"
 
-
-  - name: linking default to sites-enabled
+  - name: Linking  
     file:
        src: "/etc/nginx/sites-available/default1"
        dest: "/etc/nginx/sites-enabled/default1"
        state: link
 
-
-  - name: restart nginx
+     
+  - name: Restarting Nginx
     service:
        name: nginx
        state: restarted
     become: yes        
-
+   
      
 - hosts: all
   gather_facts: y
   
 - hosts: haproxy
   become: true
-
+ 
 
   vars:
     haproxy_maxconns: 4096
@@ -93,40 +128,21 @@
     haproxy_balance: leastconn
     haproxy_frontend_port: 80
 
-handlers:
-
-  - name: run Haproxy
-    service:
-      name: haproxy
-      state: started
-
-      
-- hosts: webservers
-  gather_facts: y
-  
-
   tasks:
   
-  - name: restart nginx
-    service:
-       name: nginx
-       state: restarted
-    become: yes
-
-
-  - name: Update apt cache
+  - name: Update cache
     become: yes
     apt:
       update_cache: yes
       cache_valid_time: 7200
 
-  - name: Installing the packages
+  - name: Installing packages
     become: true
     apt:
       name: haproxy
       state: latest   
 
-  - name: upgrade packages
+  - name: Upgrade
     apt:
       update_cache: yes
       upgrade: dist
@@ -134,20 +150,49 @@ handlers:
     notify:
       - run Haproxy      
 
-  - name: Gather facts from servers
+  - name: Information from servers
     setup:
       filter: ansible_default_ipv4.address   
 
 
-  - name: Deploy HAProxy configuration
+  - name: Removing haproxy_cfg
+    file:
+       path: "/etc/haproxy/haproxy.cfg"
+       state: absent
+    notify:
+    - restart Haproxy 
+
+  - name: Deploy HAProxy  
     template:
-      src: ./haproxyfile.cfg.j2
+      src: ./haproxy.cfg.j2
       dest: "/etc/haproxy/haproxy.cfg"
     notify:
       - restart Haproxy
       - run Haproxy
 
+  handlers:
+
+  - name: run Haproxy
+    service:
+      name: haproxy
+      state: started
+
+  - name: restart Haproxy
+    service:
+      name: haproxy
+      state: restarted
+      
+- hosts: webservers
+  gather_facts: y
   
+  tasks:
+  
+  - name: Restarting nginx
+    service:
+       name: nginx
+       state: restarted
+    become: yes
+
 
 
 
